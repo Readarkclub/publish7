@@ -17,7 +17,7 @@ npm i
 # 启动开发服务器 (端口 3000,自动打开浏览器)
 npm run dev
 
-# 构建生产版本 (输出到 build/ 目录)
+# 构建生产版本 (输出到 dist/ 目录)
 npm run build
 ```
 
