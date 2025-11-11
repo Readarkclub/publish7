@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(example-skills:webapp-testing)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm i)",
+      "Bash(timeout 5 bash:*)",
+      "mcp__chrome-devtools__new_page",
+      "mcp__chrome-devtools__take_screenshot",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
