@@ -11,9 +11,12 @@ export interface Event {
   id: string;
   title: string;
   date: string;
+  time?: string; // 活动开始时间（用于编辑回填）
   location: string;
+  address?: string;
   category: string;
   attendees: number;
+  capacity?: number; // 活动人数上限
   price: string;
   imageUrl: string;
   description?: string;

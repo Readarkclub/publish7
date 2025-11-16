@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from "react";
-import { Footer } from "./Footer";
 import { SearchBar } from "./SearchBar";
 import { FilterSidebar } from "./FilterSidebar";
 import { EventCard } from "./EventCard";
@@ -11,14 +10,20 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTr
 import type { Event } from "../types/event";
 
 interface DiscoverPageProps {
-  onNavigate?: (page: "home" | "discover" | "profile" | "create-event") => void;
-  onEventClick?: (eventId: string) => void;
+  onNavigate?: (page: "home" | "discover" | "profile" | "create-event", eventId?: string) => void;
   events?: Event[];
-  initialCategory?: string;
-  onCategoryClick?: (category: string) => void;
+  category?: string;
+  onClearCategory?: () => void;
+  user?: {
+    name: string;
+    email: string;
+    avatar?: string;
+  } | null;
+  onToggleFavorite?: (eventId: string) => void;
+  favoriteEvents?: string[];
 }
 
-export function DiscoverPage({ onNavigate, onEventClick, events, initialCategory, onCategoryClick }: DiscoverPageProps) {
+export function DiscoverPage({ onNavigate, events, category, onClearCategory, user, onToggleFavorite, favoriteEvents }: DiscoverPageProps) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState("latest");
   
@@ -28,18 +33,20 @@ export function DiscoverPage({ onNavigate, onEventClick, events, initialCategory
   const [searchDate, setSearchDate] = useState("");
   
   // 筛选状态
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(initialCategory ? [initialCategory] : []);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(category ? [category] : []);
   const [selectedDateRange, setSelectedDateRange] = useState<string[]>([]);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<number[]>([0, 2000]);
   const [showFreeOnly, setShowFreeOnly] = useState(false);
 
-  // 监听 initialCategory 变化，更新筛选分类
+  // 监听 category 变化，更新筛选分类
   useEffect(() => {
-    if (initialCategory) {
-      setSelectedCategories([initialCategory]);
+    if (category) {
+      setSelectedCategories([category]);
+    } else {
+      setSelectedCategories([]);
     }
-  }, [initialCategory]);
+  }, [category]);
 
   // 使用传入的 events 或默认的空数组
   const allEvents = events || [];
@@ -236,6 +243,7 @@ export function DiscoverPage({ onNavigate, onEventClick, events, initialCategory
     setSearchQuery("");
     setSearchCity("");
     setSearchDate("");
+    onClearCategory?.(); // 通知父组件清空分类
   };
 
   const handleSearch = () => {
@@ -401,15 +409,18 @@ export function DiscoverPage({ onNavigate, onEventClick, events, initialCategory
               </div>
 
               {/* Events Grid/List */}
-              <div className={viewMode === "grid" 
-                ? "grid md:grid-cols-2 xl:grid-cols-3 gap-6" 
+              <div className={viewMode === "grid"
+                ? "grid md:grid-cols-2 xl:grid-cols-3 gap-6"
                 : "space-y-6"
               }>
                 {displayEvents.map((event) => (
-                  <EventCard 
-                    key={event.id} 
-                    {...event} 
-                    onClick={() => onEventClick?.(event.id)}
+                  <EventCard
+                    key={event.id}
+                    {...event}
+                    onClick={() => onNavigate?.("event-detail", event.id)}
+                    onToggleFavorite={onToggleFavorite}
+                    isFavorited={favoriteEvents?.includes(event.id)}
+                    user={user}
                   />
                 ))}
               </div>
@@ -429,8 +440,6 @@ export function DiscoverPage({ onNavigate, onEventClick, events, initialCategory
           </div>
         </div>
       </section>
-
-      <Footer onCategoryClick={onCategoryClick} onNavigate={onNavigate} />
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Footer } from "./Footer";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -14,7 +13,7 @@ import { Switch } from "./ui/switch";
 import { Calendar, MapPin, Settings, LogOut, Heart, Ticket, Edit, Mail, User as UserIcon, Camera, Trash2, FileEdit, Users, Lock, Eye, EyeOff, Check, X } from "lucide-react";
 import { EventCard } from "./EventCard";
 import type { Event } from "../types/event";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 import { handleAvatarUpload } from "../utils/imageUpload";
 
 interface ProfilePageProps {
@@ -712,7 +711,7 @@ export function ProfilePage({
                     </div>
                   </div>
 
-                  {/* 邮箱编辑 */}
+                  {/* 邮箱显示（只读） */}
                   <div className="grid gap-2">
                     <label className="text-sm text-gray-600">邮箱</label>
                     <div className="flex gap-2">
@@ -720,55 +719,12 @@ export function ProfilePage({
                         <input
                           type="email"
                           value={email}
-                          onChange={(e) => {
-                            setEmail(e.target.value);
-                            if (isEditingEmail) {
-                              validateEmail(e.target.value);
-                            }
-                          }}
-                          onBlur={(e) => {
-                            if (isEditingEmail) {
-                              validateEmail(e.target.value);
-                            }
-                          }}
-                          readOnly={!isEditingEmail}
-                          className={`w-full px-3 py-2 border rounded-lg ${
-                            isEditingEmail ? "bg-white" : "bg-gray-50"
-                          } ${emailError && isEditingEmail ? "border-red-500" : "border-gray-300"}`}
+                          readOnly
+                          className="w-full px-3 py-2 border rounded-lg bg-gray-50 border-gray-300 text-gray-600"
                         />
-                        {emailError && isEditingEmail && (
-                          <p className="text-sm text-red-600 mt-1">{emailError}</p>
-                        )}
                       </div>
-                      {isEditingEmail ? (
-                        <>
-                          <Button 
-                            variant="outline" 
-                            onClick={handleCancelEmail}
-                          >
-                            取消
-                          </Button>
-                          <Button 
-                            className="bg-purple-600 hover:bg-purple-700"
-                            onClick={handleSaveEmail}
-                            disabled={!!emailError}
-                          >
-                            保存
-                          </Button>
-                        </>
-                      ) : (
-                        <Button 
-                          variant="outline"
-                          onClick={() => {
-                            setIsEditingEmail(true);
-                            setEmailError("");
-                          }}
-                        >
-                          编辑
-                        </Button>
-                      )}
                     </div>
-                    {isEditingEmail && !emailError && (
+                    {false && (
                       <p className="text-sm text-amber-600">
                         ⚠️ 更改邮箱后，您将使用新邮箱登录
                       </p>
@@ -872,8 +828,6 @@ export function ProfilePage({
           </TabsContent>
         </Tabs>
       </section>
-
-      <Footer onCategoryClick={onCategoryClick} onNavigate={onNavigate} />
 
       {/* Avatar Edit Dialog */}
       <Dialog open={isAvatarDialogOpen} onOpenChange={handleDialogClose}>

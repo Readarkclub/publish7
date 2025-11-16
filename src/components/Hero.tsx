@@ -4,15 +4,16 @@ import { ImageWithFallback } from "./figma/ImageWithFallback";
 
 interface HeroProps {
   onNavigate?: (page: "home" | "discover" | "profile" | "create-event") => void;
+  onSearch?: (keyword: string) => void;
   user?: {
     name: string;
     email: string;
     avatar?: string;
   } | null;
-  onLoginClick?: () => void;
+  onLogin?: () => void;
 }
 
-export function Hero({ onNavigate, user, onLoginClick }: HeroProps) {
+export function Hero({ onNavigate, onSearch, user, onLogin }: HeroProps) {
   return (
     <section className="relative bg-gradient-to-br from-purple-50 via-white to-pink-50 overflow-hidden">
       <div className="container mx-auto px-4 py-20 md:py-32">
@@ -43,12 +44,12 @@ export function Hero({ onNavigate, user, onLoginClick }: HeroProps) {
                 <Search className="mr-2 h-5 w-5" />
                 发现活动
               </Button>
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 variant="outline"
                 onClick={() => {
                   if (!user) {
-                    onLoginClick?.();
+                    onLogin?.();
                   } else {
                     onNavigate?.("create-event");
                   }

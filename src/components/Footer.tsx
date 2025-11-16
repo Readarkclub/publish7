@@ -1,11 +1,10 @@
 import { CalendarDays, Mail, MapPin, Phone } from "lucide-react";
 
 interface FooterProps {
-  onCategoryClick?: (category: string) => void;
-  onNavigate?: (page: "home" | "discover" | "profile" | "create-event") => void;
+  onNavigate?: (page: "home" | "discover" | "profile" | "create-event", eventId?: string, category?: string) => void;
 }
 
-export function Footer({ onCategoryClick, onNavigate }: FooterProps) {
+export function Footer({ onNavigate }: FooterProps) {
   return (
     <footer className="bg-gray-900 text-gray-300 py-16">
       <div className="container mx-auto px-4">
@@ -48,32 +47,32 @@ export function Footer({ onCategoryClick, onNavigate }: FooterProps) {
             <h3 className="text-white mb-4">分类</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <button 
-                  onClick={() => onCategoryClick?.("音乐")} 
+                <button
+                  onClick={() => onNavigate?.("discover", undefined, "音乐")}
                   className="hover:text-purple-400 transition-colors text-left"
                 >
                   音乐活动
                 </button>
               </li>
               <li>
-                <button 
-                  onClick={() => onCategoryClick?.("科技")} 
+                <button
+                  onClick={() => onNavigate?.("discover", undefined, "科技")}
                   className="hover:text-purple-400 transition-colors text-left"
                 >
                   科技会议
                 </button>
               </li>
               <li>
-                <button 
-                  onClick={() => onCategoryClick?.("体育")} 
+                <button
+                  onClick={() => onNavigate?.("discover", undefined, "体育")}
                   className="hover:text-purple-400 transition-colors text-left"
                 >
                   体育赛事
                 </button>
               </li>
               <li>
-                <button 
-                  onClick={() => onCategoryClick?.("艺术")} 
+                <button
+                  onClick={() => onNavigate?.("discover", undefined, "艺术")}
                   className="hover:text-purple-400 transition-colors text-left"
                 >
                   艺术展览

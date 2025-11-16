@@ -1,6 +1,4 @@
-import { projectId, publicAnonKey } from './supabase/info';
-
-const API_URL = `https://${projectId}.supabase.co/functions/v1/make-server-9b3b112b`;
+import { env } from '../config/env';
 
 /**
  * 压缩图片
@@ -122,11 +120,11 @@ export async function uploadImageToStorage(
   fileName: string
 ): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
-    const response = await fetch(`${API_URL}/upload-image`, {
+    const response = await fetch(`${env.edgeFunctionUrl}/upload-image`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${publicAnonKey}`
+        'Authorization': `Bearer ${env.supabase.anonKey}`
       },
       body: JSON.stringify({
         imageData,
@@ -170,10 +168,10 @@ export async function deleteImageFromStorage(
       return { success: false, error: '无效的图片 URL' };
     }
 
-    const response = await fetch(`${API_URL}/delete-image/${fileName}`, {
+    const response = await fetch(`${env.edgeFunctionUrl}/delete-image/${fileName}`, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${publicAnonKey}`
+        'Authorization': `Bearer ${env.supabase.anonKey}`
       }
     });
 

@@ -12,12 +12,12 @@ interface HeaderProps {
     email: string;
     avatar?: string;
   } | null;
-  onLoginClick?: () => void;
-  onRegisterClick?: () => void;
+  onLogin?: () => void;
+  onRegister?: () => void;
   onLogout?: () => void;
 }
 
-export function Header({ onNavigate, user, onLoginClick, onRegisterClick, onLogout }: HeaderProps) {
+export function Header({ onNavigate, user, onLogin, onRegister, onLogout }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -66,7 +66,7 @@ export function Header({ onNavigate, user, onLoginClick, onRegisterClick, onLogo
                 <button
                   onClick={() => {
                     if (!user) {
-                      onLoginClick?.();
+                      onLogin?.();
                       setMobileMenuOpen(false);
                     } else {
                       onNavigate?.("create-event");
@@ -112,20 +112,11 @@ export function Header({ onNavigate, user, onLoginClick, onRegisterClick, onLogo
                       variant="outline"
                       className="w-full justify-start gap-3"
                       onClick={() => {
-                        onLoginClick?.();
+                        onLogin?.();
                         setMobileMenuOpen(false);
                       }}
                     >
                       登录
-                    </Button>
-                    <Button
-                      className="w-full justify-start gap-3 mt-2 bg-purple-600 hover:bg-purple-700"
-                      onClick={() => {
-                        onRegisterClick?.();
-                        setMobileMenuOpen(false);
-                      }}
-                    >
-                      注册
                     </Button>
                   </>
                 )}
@@ -152,10 +143,10 @@ export function Header({ onNavigate, user, onLoginClick, onRegisterClick, onLogo
           >
             发现活动
           </button>
-          <button 
+          <button
             onClick={() => {
               if (!user) {
-                onLoginClick?.();
+                onLogin?.();
               } else {
                 onNavigate?.("create-event");
               }
@@ -194,9 +185,9 @@ export function Header({ onNavigate, user, onLoginClick, onRegisterClick, onLogo
                   个人中心
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onSelect={(e) => {
-                    e.preventDefault();
+                <DropdownMenuItem
+                  onClick={() => {
+                    console.log('🔴 退出登录按钮被点击');
                     onLogout?.();
                   }}
                   className="cursor-pointer text-red-600 focus:text-red-600"
@@ -208,10 +199,10 @@ export function Header({ onNavigate, user, onLoginClick, onRegisterClick, onLogo
             </DropdownMenu>
           ) : (
             <>
-              <Button variant="ghost" className="hidden md:inline-flex" onClick={onLoginClick}>
+              <Button variant="ghost" className="hidden md:inline-flex" onClick={onLogin}>
                 登录
               </Button>
-              <Button className="bg-purple-600 hover:bg-purple-700" onClick={onRegisterClick}>
+              <Button className="bg-purple-600 hover:bg-purple-700" onClick={onRegister}>
                 注册
               </Button>
             </>

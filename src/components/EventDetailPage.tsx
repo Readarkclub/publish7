@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Footer } from "./Footer";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -24,18 +23,19 @@ import {
   Check,
   ArrowLeft
 } from "lucide-react";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 import type { Event, Review } from "../types/event";
 
 interface EventDetailPageProps {
   onNavigate?: (page: "home" | "discover" | "profile" | "create-event") => void;
-  eventId: string;
+  eventId?: string;
   user?: {
     name: string;
     email: string;
     avatar?: string;
   } | null;
   events?: Event[];
+  event?: Event; // 新添加：直接传入整个活动对象
   isRegistered?: boolean;
   isFavorited?: boolean;
   onRegister?: (eventId: string) => boolean;
@@ -46,11 +46,12 @@ interface EventDetailPageProps {
   onAddReview?: (eventId: string, review: { rating: number; comment: string }) => void;
 }
 
-export function EventDetailPage({ 
-  onNavigate, 
-  eventId, 
-  user, 
+export function EventDetailPage({
+  onNavigate,
+  eventId,
+  user,
   events,
+  event: propEvent, // 重命名：直接传入的 event 对象
   isRegistered: externalIsRegistered,
   isFavorited: externalIsFavorited,
   onRegister,
@@ -65,18 +66,15 @@ export function EventDetailPage({
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [hoverRating, setHoverRating] = useState(0);
-  
+
   // 使用外部传入的状态
   const isRegistered = externalIsRegistered || false;
   const isFavorited = externalIsFavorited || false;
   const isFollowing = isFollowingOrganizer || false;
 
-  // 从传入的 events 中查找对应的活动
-  const foundEvent = events?.find(e => e.id === eventId);
-  
-  // 如果找不到活动，使用默认数据
-  const event: Event = foundEvent || {
-    id: eventId,
+  // 优先使用直接传入的 event 对象，如果没有则尝试从 events 中查找
+  const event: Event = propEvent || events?.find(e => e.id === eventId) || {
+    id: eventId || "default-event",
     title: "夏日音乐节 2025 - 全明星阵容震撼来袭",
     date: "2025年7月15日 18:00",
     location: "上海世博公园",
@@ -169,13 +167,13 @@ export function EventDetailPage({
 
   const handleRegister = () => {
     if (onRegister) {
-      onRegister(eventId);
+      onRegister(event.id);
     }
   };
 
   const handleFavorite = () => {
     if (onToggleFavorite) {
-      onToggleFavorite(eventId);
+      onToggleFavorite(event.id);
     }
   };
 
@@ -205,7 +203,7 @@ export function EventDetailPage({
     }
 
     if (onAddReview) {
-      onAddReview(eventId, {
+      onAddReview(event.id, {
         rating: reviewRating,
         comment: reviewComment
       });
@@ -300,6 +298,20 @@ export function EventDetailPage({
                     <div className="text-gray-900">{event.attendees}+ 人</div>
                   </div>
                 </div>
+
+                {event.address && (
+                  <div className="md:col-span-3 pt-4 border-t">
+                    <div className="flex items-start gap-3">
+                      <div className="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center shrink-0">
+                        <MapPin className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-600">详细地址</div>
+                        <div className="text-gray-900">{event.address}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </Card>
 
@@ -321,21 +333,25 @@ export function EventDetailPage({
                     </div>
                   </div>
 
-                  <Separator />
+                  {event.highlights && event.highlights.length > 0 && (
+                    <>
+                      <Separator />
 
-                  <div>
-                    <h3 className="text-xl text-gray-900 mb-4">活动亮点</h3>
-                    <div className="grid md:grid-cols-2 gap-3">
-                      {event.highlights?.map((highlight, index) => (
-                        <div key={index} className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-                          <span className="text-gray-700">{highlight}</span>
+                      <div>
+                        <h3 className="text-xl text-gray-900 mb-4">活动亮点</h3>
+                        <div className="grid md:grid-cols-2 gap-3">
+                          {event.highlights.map((highlight, index) => (
+                            <div key={index} className="flex items-start gap-2">
+                              <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+                              <span className="text-gray-700">{highlight}</span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      </div>
 
-                  <Separator />
+                      <Separator />
+                    </>
+                  )}
 
                   {/* Organizer Info */}
                   <div>
@@ -366,20 +382,32 @@ export function EventDetailPage({
                 {/* Agenda Tab */}
                 <TabsContent value="agenda" className="space-y-4">
                   <h2 className="text-2xl text-gray-900 mb-4">活动日程</h2>
-                  <div className="space-y-4">
-                    {event.agenda?.map((item, index) => (
-                      <div key={index} className="flex gap-4 pb-4 border-b last:border-0">
-                        <div className="flex items-center gap-2 text-purple-600 min-w-[140px]">
-                          <Clock className="h-4 w-4" />
-                          <span>{item.time}</span>
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="text-gray-900 mb-1">{item.title}</h4>
-                          <p className="text-gray-600 text-sm">{item.description}</p>
-                        </div>
+                  {(!event.agenda || event.agenda.length === 0) ? (
+                    <div className="text-center py-12">
+                      <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                        <Clock className="h-8 w-8 text-gray-400" />
                       </div>
-                    ))}
-                  </div>
+                      <h3 className="text-gray-900 mb-2">暂无日程安排</h3>
+                      <p className="text-gray-500 text-sm">
+                        主办方暂未公布活动日程
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {event.agenda.map((item, index) => (
+                        <div key={index} className="flex gap-4 pb-4 border-b last:border-0">
+                          <div className="flex items-center gap-2 text-purple-600 min-w-[140px]">
+                            <Clock className="h-4 w-4" />
+                            <span>{item.time}</span>
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-gray-900 mb-1">{item.title}</h4>
+                            <p className="text-gray-600 text-sm">{item.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </TabsContent>
 
                 {/* Reviews Tab */}
@@ -483,6 +511,12 @@ export function EventDetailPage({
                     <span className="text-gray-600">报名人数</span>
                     <span className="text-gray-900">{event.attendees}+ 人</span>
                   </div>
+                  {event.capacity && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">活动人数上限</span>
+                      <span className="text-gray-900">{event.capacity} 人</span>
+                    </div>
+                  )}
                 </div>
 
                 <Separator />
@@ -526,8 +560,6 @@ export function EventDetailPage({
           </div>
         </div>
       </section>
-
-      <Footer onCategoryClick={onCategoryClick} onNavigate={onNavigate} />
 
       {/* Share Dialog */}
       <ShareDialog 

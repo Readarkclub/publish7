@@ -2,14 +2,17 @@ import { EventCard } from "./EventCard";
 import { Button } from "./ui/button";
 import { ArrowRight } from "lucide-react";
 import type { Event } from "../types/event";
+import type { User } from "../services/authService";
 
 interface FeaturedEventsProps {
-  onEventClick?: (eventId: string) => void;
   events?: Event[];
-  onNavigate?: (page: "home" | "discover" | "profile" | "create-event") => void;
+  onNavigate?: (page: "home" | "discover" | "profile" | "create-event" | "event-detail", eventId?: string) => void;
+  user?: User | null;
+  onToggleFavorite?: (eventId: string) => void;
+  favoriteEvents?: string[];
 }
 
-export function FeaturedEvents({ onEventClick, events, onNavigate }: FeaturedEventsProps) {
+export function FeaturedEvents({ events, onNavigate, user, onToggleFavorite, favoriteEvents }: FeaturedEventsProps) {
   // 使用传入的 events 或默认的空数组
   const displayEvents = events || [];
 
@@ -33,10 +36,13 @@ export function FeaturedEvents({ onEventClick, events, onNavigate }: FeaturedEve
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {displayEvents.map((event) => (
-            <EventCard 
-              key={event.id} 
-              {...event} 
-              onClick={() => onEventClick?.(event.id)}
+            <EventCard
+              key={event.id}
+              {...event}
+              onClick={() => onNavigate?.("event-detail", event.id)}
+              onToggleFavorite={onToggleFavorite}
+              isFavorited={favoriteEvents?.includes(event.id || '')}
+              user={user}
             />
           ))}
         </div>

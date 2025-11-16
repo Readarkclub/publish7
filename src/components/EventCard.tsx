@@ -1,7 +1,8 @@
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Calendar, MapPin, Users } from "lucide-react";
+import { Calendar, MapPin, Users, Heart } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import type { User } from "../services/authService";
 
 interface EventCardProps {
   id?: string;
@@ -13,13 +14,23 @@ interface EventCardProps {
   price: string;
   imageUrl: string;
   onClick?: () => void;
+  onToggleFavorite?: (eventId: string) => void;
+  isFavorited?: boolean;
+  user?: User | null;
 }
 
-export function EventCard({ id, title, date, location, category, attendees, price, imageUrl, onClick }: EventCardProps) {
+export function EventCard({ id, title, date, location, category, attendees, price, imageUrl, onClick, onToggleFavorite, isFavorited, user }: EventCardProps) {
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onToggleFavorite && id) {
+      onToggleFavorite(id);
+    }
+  };
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group" onClick={onClick}>
       <div className="relative overflow-hidden">
-        <ImageWithFallback 
+        <ImageWithFallback
           src={imageUrl}
           alt={title}
           className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
@@ -27,11 +38,25 @@ export function EventCard({ id, title, date, location, category, attendees, pric
         <Badge className="absolute top-3 left-3 bg-white/90 text-gray-900 hover:bg-white">
           {category}
         </Badge>
-        {price === "免费" && (
-          <Badge className="absolute top-3 right-3 bg-green-500 hover:bg-green-600">
-            免费
-          </Badge>
-        )}
+
+        <div className="absolute top-3 right-3 flex gap-2">
+          {price === "免费" && (
+            <Badge className="bg-green-500 hover:bg-green-600">
+              免费
+            </Badge>
+          )}
+
+          {/* Favorite button */}
+          <button
+            className="p-2 rounded-full bg-white/90 hover:bg-white shadow-md transition-all"
+            onClick={handleFavoriteClick}
+            title={isFavorited ? "取消收藏" : "收藏"}
+          >
+            <Heart
+              className={`h-5 w-5 transition-colors duration-300 ${isFavorited ? "text-red-500 fill-red-500" : "text-gray-400 hover:text-red-500"}`}
+            />
+          </button>
+        </div>
       </div>
 
       <div className="p-5 space-y-3">

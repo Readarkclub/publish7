@@ -1,10 +1,10 @@
 import { Music, Code, Trophy, Palette, BookOpen, PartyPopper } from "lucide-react";
 
 interface CategoriesProps {
-  onCategoryClick?: (category: string) => void;
+  onNavigate?: (page: "home" | "discover" | "profile" | "create-event", eventId?: string, category?: string) => void;
 }
 
-export function Categories({ onCategoryClick }: CategoriesProps) {
+export function Categories({ onNavigate }: CategoriesProps) {
   const categories = [
     {
       name: "音乐",
@@ -58,7 +58,7 @@ export function Categories({ onCategoryClick }: CategoriesProps) {
             return (
               <button
                 key={index}
-                onClick={() => onCategoryClick?.(category.name)}
+                onClick={() => onNavigate?.("discover", undefined, category.name)}
                 className={`${category.color} rounded-xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:scale-105`}
               >
                 <Icon className="h-8 w-8" />

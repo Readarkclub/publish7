@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { Footer } from "./Footer";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
@@ -30,6 +29,36 @@ import { cn } from "./ui/utils";
 import { handleImageUpload } from "../utils/imageUpload";
 
 import type { Event } from "../types/event";
+
+// 解析活动日期字符串，提取日期和时间
+// 输入示例: "2025年1月15日 14:00" 或 "2025年1月15日"
+// 输出: { date: Date对象, time: "14:00" 或 "" }
+function parseEventDate(dateString: string): { date: Date | undefined; time: string } {
+  if (!dateString) {
+    return { date: undefined, time: "" };
+  }
+
+  // 匹配中文日期格式: "2025年1月15日" 或 "2025年1月15日 14:00"
+  const dateTimeMatch = dateString.match(/(\d{4})年(\d{1,2})月(\d{1,2})日(?:\s+(\d{1,2}):(\d{2}))?/);
+
+  if (dateTimeMatch) {
+    const [, year, month, day, hour, minute] = dateTimeMatch;
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    const time = hour && minute ? `${hour.padStart(2, '0')}:${minute}` : "";
+    return { date, time };
+  }
+
+  // 如果不是中文格式，尝试直接解析
+  const parsedDate = new Date(dateString);
+  if (!isNaN(parsedDate.getTime())) {
+    const time = parsedDate.getHours() > 0 || parsedDate.getMinutes() > 0
+      ? parsedDate.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+      : "";
+    return { date: parsedDate, time };
+  }
+
+  return { date: undefined, time: "" };
+}
 
 interface CreateEventPageProps {
   onNavigate?: (page: "home" | "discover" | "profile" | "create-event") => void;
@@ -72,22 +101,25 @@ export function CreateEventPage({ onNavigate, user, onEventCreate, onEventUpdate
   const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEditMode = !!editingEvent;
-  
+
+  // 解析编辑模式下的日期和时间
+  const parsedDateTime = editingEvent?.date ? parseEventDate(editingEvent.date) : { date: undefined, time: "" };
+
   const [formData, setFormData] = useState<EventFormData>({
     title: editingEvent?.title || "",
     category: editingEvent?.category || "",
-    date: editingEvent?.date ? new Date(editingEvent.date) : undefined,
-    time: editingEvent?.date ? new Date(editingEvent.date).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : "",
+    date: parsedDateTime.date,
+    time: editingEvent?.time || parsedDateTime.time,
     location: editingEvent?.location || "",
-    address: "",
+    address: editingEvent?.address || "",
     description: editingEvent?.description || "",
     highlights: editingEvent?.highlights || [],
     isFree: editingEvent?.price === "免费",
     price: editingEvent?.price && editingEvent.price !== "免费" ? editingEvent.price.replace("¥", "") : "",
-    capacity: "",
+    capacity: editingEvent?.capacity?.toString() || "",
     imageUrl: editingEvent?.imageUrl || "",
     agenda: editingEvent?.agenda || [],
-    organizerInfo: "",
+    organizerInfo: editingEvent?.organizer?.description || "",
     contactEmail: user?.email || "",
     contactPhone: ""
   });
@@ -369,12 +401,15 @@ export function CreateEventPage({ onNavigate, user, onEventCreate, onEventUpdate
     const draftEvent: Event = {
       id: editingEvent?.id || `event-${Date.now()}`,
       title: formData.title || "未命名活动",
-      date: formData.date 
+      date: formData.date
         ? `${formData.date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}${formData.time ? ` ${formData.time}` : ''}`
         : '',
+      time: formData.time,
       location: formData.location || "待定",
+      address: formData.address,
       category: formData.category || "其他",
       attendees: editingEvent?.attendees || 0,
+      capacity: formData.capacity ? Number(formData.capacity) : undefined,
       price: formData.isFree ? '免费' : formData.price ? `¥${formData.price}` : '免费',
       imageUrl: formData.imageUrl || '',
       description: formData.description,
@@ -409,7 +444,7 @@ export function CreateEventPage({ onNavigate, user, onEventCreate, onEventUpdate
   const handlePublish = () => {
     // 验证所有步骤
     const allStepsValid = [1, 2, 3, 4, 5].every(step => validateStep(step));
-    
+
     if (!allStepsValid) {
       toast.error("请填写所有必填信息并修正错误");
       return;
@@ -419,12 +454,15 @@ export function CreateEventPage({ onNavigate, user, onEventCreate, onEventUpdate
     const newEvent: Event = {
       id: editingEvent?.id || `event-${Date.now()}`,
       title: formData.title,
-      date: formData.date 
+      date: formData.date
         ? `${formData.date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}${formData.time ? ` ${formData.time}` : ''}`
         : '',
+      time: formData.time,
       location: formData.location,
+      address: formData.address,
       category: formData.category,
       attendees: editingEvent?.attendees || 0,
+      capacity: formData.capacity ? Number(formData.capacity) : undefined,
       price: formData.isFree ? '免费' : formData.price ? `¥${formData.price}` : '免费',
       imageUrl: formData.imageUrl || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=600&fit=crop',
       description: formData.description,
@@ -1147,8 +1185,6 @@ export function CreateEventPage({ onNavigate, user, onEventCreate, onEventUpdate
           )}
         </div>
       </section>
-
-      <Footer onCategoryClick={onCategoryClick} onNavigate={onNavigate} />
     </div>
   );
 }

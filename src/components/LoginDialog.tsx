@@ -4,7 +4,8 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Mail, Lock, Check } from "lucide-react";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
+import * as authService from "../services/authService";
 
 interface LoginDialogProps {
   open: boolean;
@@ -164,12 +165,19 @@ function ForgotPasswordDialog({
 
     setIsSubmitting(true);
 
-    // 模拟发送重置链接
-    setTimeout(() => {
-      setIsSubmitting(false);
+    // 调用真实的密码重置 API
+    const result = await authService.resetPassword(email);
+
+    setIsSubmitting(false);
+
+    if (result.success) {
       setIsSuccess(true);
       toast.success("密码重置链接已发送到您的邮箱");
-    }, 1500);
+    } else {
+      // 即使失败也显示成功消息（安全考虑）
+      setIsSuccess(true);
+      toast.success("如果该邮箱已注册，您将收到密码重置链接");
+    }
   };
 
   const handleClose = () => {
