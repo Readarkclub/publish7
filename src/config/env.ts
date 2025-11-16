@@ -13,12 +13,16 @@ interface EnvConfig {
 }
 
 /**
- * 获取环境变量，如果不存在则抛出错误
+ * 获取环境变量，如果不存在则使用默认值
  */
-function getEnvVar(key: string): string {
+function getEnvVar(key: string, defaultValue?: string): string {
   const value = import.meta.env[key];
   if (!value) {
-    throw new Error(`环境变量 ${key} 未定义`);
+    if (defaultValue) {
+      console.warn(`环境变量 ${key} 未定义，使用默认值`);
+      return defaultValue;
+    }
+    throw new Error(`环境变量 ${key} 未定义且无默认值`);
   }
   return value;
 }
@@ -28,11 +32,11 @@ function getEnvVar(key: string): string {
  */
 export const env: EnvConfig = {
   supabase: {
-    url: getEnvVar('VITE_SUPABASE_URL'),
-    anonKey: getEnvVar('VITE_SUPABASE_ANON_KEY'),
-    projectId: getEnvVar('VITE_SUPABASE_PROJECT_ID'),
+    url: getEnvVar('VITE_SUPABASE_URL', 'https://jdpyrlrcjaovbryqlcbs.supabase.co'),
+    anonKey: getEnvVar('VITE_SUPABASE_ANON_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkcHlybHJjamFvdmJyeXFsY2JzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5NjUyMDYsImV4cCI6MjA2OTU0MTIwNn0.ikz2S2fdB_WBftcQZvN1MifVnDMqDNd1D_HhXHMOogM'),
+    projectId: getEnvVar('VITE_SUPABASE_PROJECT_ID', 'jdpyrlrcjaovbryqlcbs'),
   },
-  edgeFunctionUrl: getEnvVar('VITE_EDGE_FUNCTION_URL'),
+  edgeFunctionUrl: getEnvVar('VITE_EDGE_FUNCTION_URL', 'https://jdpyrlrcjaovbryqlcbs.supabase.co/functions/v1/make-server-9b3b112b'),
 };
 
 /**
