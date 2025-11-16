@@ -8,4 +8,7 @@
   Run `npm i` to install the dependencies.
 
   Run `npm run dev` to start the development server.
-  
+
+  ## Deployment
+
+  This project is configured to deploy on Vercel. Environment variables are required for Supabase integration.
