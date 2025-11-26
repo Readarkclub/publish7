@@ -37,19 +37,25 @@ function dbRowToEvent(row: any, agenda?: any[], reviews?: any[]): Event {
 }
 
 /**
- * 获取所有已发布的活动
+ * 获取所有已发布的活动 (支持分页)
  */
-export async function getAllEvents(): Promise<{
+export async function getAllEvents(page: number = 1, limit: number = 50): Promise<{
   success: boolean
   events?: Event[]
+  total?: number
   error?: string
 }> {
   try {
-    const { data, error } = await supabase
+    const from = (page - 1) * limit
+    const to = from + limit - 1
+
+    // 获取总数和数据
+    const { data, count, error } = await supabase
       .from('events')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('status', 'published')
       .order('created_at', { ascending: false })
+      .range(from, to)
 
     if (error) {
       console.error('获取活动列表失败:', error)
@@ -57,7 +63,7 @@ export async function getAllEvents(): Promise<{
     }
 
     const events = data.map(row => dbRowToEvent(row))
-    return { success: true, events }
+    return { success: true, events, total: count || 0 }
   } catch (error) {
     console.error('获取活动列表异常:', error)
     return {
@@ -137,7 +143,7 @@ export async function searchEvents(keyword: string): Promise<{
 }
 
 /**
- * 获取活动详情（包括议程和评价）
+ * 获取活动详情（包括议程和评价）- 并行请求优化
  */
 export async function getEventById(eventId: string): Promise<{
   success: boolean
@@ -145,30 +151,37 @@ export async function getEventById(eventId: string): Promise<{
   error?: string
 }> {
   try {
-    // 获取活动基本信息
-    const { data: eventData, error: eventError } = await supabase
-      .from('events')
-      .select('*')
-      .eq('id', eventId)
-      .single()
+    // 并行发送三个请求，避免瀑布流延迟
+    const [eventResult, agendaResult, reviewsResult] = await Promise.all([
+      // 1. 获取活动基本信息
+      supabase
+        .from('events')
+        .select('*')
+        .eq('id', eventId)
+        .single(),
+      
+      // 2. 获取议程
+      supabase
+        .from('event_agenda')
+        .select('*')
+        .eq('event_id', eventId)
+        .order('order_index', { ascending: true }),
+      
+      // 3. 获取评价
+      supabase
+        .from('event_reviews')
+        .select('*')
+        .eq('event_id', eventId)
+        .order('created_at', { ascending: false })
+    ]);
+
+    const { data: eventData, error: eventError } = eventResult;
+    const { data: agendaData } = agendaResult;
+    const { data: reviewsData } = reviewsResult;
 
     if (eventError || !eventData) {
       return { success: false, error: '活动不存在' }
     }
-
-    // 获取议程
-    const { data: agendaData } = await supabase
-      .from('event_agenda')
-      .select('*')
-      .eq('event_id', eventId)
-      .order('order_index', { ascending: true })
-
-    // 获取评价
-    const { data: reviewsData } = await supabase
-      .from('event_reviews')
-      .select('*')
-      .eq('event_id', eventId)
-      .order('created_at', { ascending: false })
 
     const reviews = reviewsData?.map(r => ({
       user: r.user_name,

@@ -23,8 +23,37 @@ dist-ssr
 *.sln
 *.sw?
 
+# Claude Code local settings
+.claude/settings.local.json
+
 # Environment variables
 .env
 .env.local
 .env.production.local
 .env.development.local
+
+# Temporary SQL files
+*.sql
+
+# Temporary JS scripts
+check-*.js
+
+# Backup files
+*.backup
+*.backup.*
+*.old.tsx
+
+# IDE and editor files
+.esdata/
+nul
+
+# Documentation files (temporary)
+*-GUIDE.md
+AGENTS.md
+GEMINI.md
+
+# Local HTML tools
+clear-localstorage.html
+
+# Supabase local
+supabase/
