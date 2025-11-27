@@ -6,6 +6,7 @@ export interface User {
   name: string
   avatar?: string | null
   bio?: string | null
+  isAdmin?: boolean
 }
 
 export interface RegisterData {
@@ -102,6 +103,7 @@ export async function register(data: RegisterData): Promise<{
         name: publicUser.name,
         avatar: publicUser.avatar,
         bio: publicUser.bio,
+        isAdmin: publicUser.is_admin || false,
       },
     }
   } catch (error) {
@@ -175,6 +177,7 @@ export async function login(data: LoginData): Promise<{
         name: publicUser.name,
         avatar: publicUser.avatar,
         bio: publicUser.bio,
+        isAdmin: publicUser.is_admin || false,
       },
     }
   } catch (error) {
@@ -247,6 +250,7 @@ export async function getCurrentUser(): Promise<{
         name: publicUser.name,
         avatar: publicUser.avatar,
         bio: publicUser.bio,
+        isAdmin: publicUser.is_admin || false,
       },
     }
   } catch (error) {
@@ -269,7 +273,7 @@ export async function getUserById(userId: string): Promise<{
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, email, name, avatar, bio')
+      .select('id, email, name, avatar, bio, is_admin')
       .eq('id', userId)
       .single()
 
@@ -285,6 +289,7 @@ export async function getUserById(userId: string): Promise<{
         name: user.name,
         avatar: user.avatar,
         bio: user.bio,
+        isAdmin: user.is_admin || false,
       },
     }
   } catch (error) {

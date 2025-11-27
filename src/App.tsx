@@ -518,6 +518,35 @@ export default function App() {
     }
   };
 
+  // 删除评价
+  const handleDeleteReview = async (eventId: string, reviewUserEmail: string) => {
+    if (!user) {
+      setShowLoginDialog(true);
+      return;
+    }
+
+    // 获取活动信息以检查是否为活动发布者
+    const event = events.find(e => e.id === eventId);
+    const isEventCreator = event?.createdBy === user.email;
+
+    // 检查权限：只能删除自己的评价、管理员、或活动发布者
+    if (user.email !== reviewUserEmail && !user.isAdmin && !isEventCreator) {
+      toast.error("无权删除此评价");
+      return;
+    }
+
+    const result = await reviewService.deleteReview(eventId, reviewUserEmail);
+
+    if (result.success) {
+      // 重新加载活动详情以刷新评价列表
+      await loadEventDetail(eventId);
+      toast.success("评价已删除");
+      console.log('✅ 评价已删除');
+    } else {
+      toast.error(result.error || "删除失败");
+    }
+  };
+
   // 创建或更新活动
   const handleSaveEvent = async (event: Event, isDraft: boolean) => {
     if (!user) {
@@ -567,6 +596,17 @@ export default function App() {
 
   // 删除活动
   const handleDeleteEvent = async (eventId: string) => {
+    // 检查权限：管理员可以删除任何活动，普通用户只能删除自己的
+    const eventToDelete = events.find(e => e.id === eventId);
+    if (!user) {
+      toast.error("请先登录");
+      return;
+    }
+    if (!user.isAdmin && eventToDelete?.createdBy !== user.email) {
+      toast.error("无权删除此活动");
+      return;
+    }
+
     const result = await eventService.deleteEvent(eventId);
 
     if (result.success) {
@@ -574,7 +614,7 @@ export default function App() {
       setPublishedEvents(publishedEvents.filter(id => id !== eventId));
       setDraftEvents(draftEvents.filter(id => id !== eventId));
       toast.success("活动已删除");
-      console.log('✅ 活动已删除:', eventId);
+      console.log('✅ 活动已删除:', eventId, user.isAdmin ? '(管理员操作)' : '');
     } else {
       toast.error(result.error || "删除失败");
     }
@@ -713,6 +753,10 @@ export default function App() {
         const favoriteEventsList = events.filter(e => favoriteEvents.includes(e.id));
         const publishedEventsList = events.filter(e => publishedEvents.includes(e.id));
         const draftEventsList = events.filter(e => draftEvents.includes(e.id));
+        // 管理员可以看到所有已发布的活动
+        const allPublishedEventsList = user.isAdmin
+          ? events.filter(e => e.status === 'published')
+          : undefined;
 
         return (
           <ProfilePage
@@ -722,6 +766,7 @@ export default function App() {
             favoriteEvents={favoriteEventsList}
             publishedEvents={publishedEventsList}
             draftEvents={draftEventsList}
+            allPublishedEvents={allPublishedEventsList}
             followedOrganizers={followedOrganizers}
             onNavigate={handleNavigate}
             onEventClick={(eventId) => handleNavigate("event-detail", eventId)}
@@ -756,8 +801,9 @@ export default function App() {
             onNavigate={handleNavigate}
             onRegister={handleRegisterEvent}
             onToggleFavorite={handleToggleFavorite}
-            onToggleFollowOrganizer={handleToggleFollowOrganizer}
+            onFollowOrganizer={handleToggleFollowOrganizer}
             onAddReview={(eventId, review) => handleAddReview(eventId, review.rating, review.comment)}
+            onDeleteReview={handleDeleteReview}
             user={user}
             isRegistered={registeredEvents.includes(selectedEventId)}
             isFavorited={favoriteEvents.includes(selectedEventId)}

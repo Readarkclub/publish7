@@ -23,6 +23,7 @@ interface ProfilePageProps {
     email: string;
     avatar?: string;
     phone?: string;
+    isAdmin?: boolean;
   } | null;
   onLogout?: () => void;
   onDeleteAccount?: () => void;
@@ -31,6 +32,7 @@ interface ProfilePageProps {
   publishedEvents?: Event[];
   draftEvents?: Event[];
   allEvents?: Event[];
+  allPublishedEvents?: Event[];
   onEventClick?: (eventId: string) => void;
   onEditEvent?: (eventId: string) => void;
   onDeleteEvent?: (eventId: string) => void;
@@ -42,9 +44,9 @@ interface ProfilePageProps {
   followedOrganizers?: string[];
 }
 
-export function ProfilePage({ 
-  onNavigate, 
-  user, 
+export function ProfilePage({
+  onNavigate,
+  user,
   onLogout,
   onDeleteAccount,
   registeredEvents = [],
@@ -52,6 +54,7 @@ export function ProfilePage({
   publishedEvents = [],
   draftEvents = [],
   allEvents = [],
+  allPublishedEvents,
   onEventClick,
   onEditEvent,
   onDeleteEvent,
@@ -369,8 +372,12 @@ export function ProfilePage({
           <Card className="p-6 bg-white shadow-lg">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-gray-600 text-sm mb-1">已发布</div>
-                <div className="text-3xl text-green-600">{publishedEvents.length}</div>
+                <div className="text-gray-600 text-sm mb-1">
+                  {user?.isAdmin ? "全部已发布" : "已发布"}
+                </div>
+                <div className="text-3xl text-green-600">
+                  {user?.isAdmin && allPublishedEvents ? allPublishedEvents.length : publishedEvents.length}
+                </div>
               </div>
               <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
                 <Edit className="h-6 w-6 text-green-600" />
@@ -398,7 +405,7 @@ export function ProfilePage({
             </TabsTrigger>
             <TabsTrigger value="published" className="gap-2">
               <Edit className="h-4 w-4" />
-              我发布的
+              {user?.isAdmin ? "活动管理" : "我发布的"}
             </TabsTrigger>
             <TabsTrigger value="settings" className="gap-2">
               <Settings className="h-4 w-4" />
@@ -522,52 +529,78 @@ export function ProfilePage({
           <TabsContent value="published" className="space-y-6">
             {/* 已发布的活动 */}
             <div>
-              <h3 className="text-lg text-gray-900 mb-4 flex items-center gap-2">
-                <Edit className="h-5 w-5 text-green-600" />
-                已发布 ({publishedEvents.length})
-              </h3>
-              {publishedEvents.length > 0 ? (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {publishedEvents.map((event) => (
-                    <div key={event.id} className="relative group">
-                      <EventCard 
-                        {...event}
-                        onClick={() => onEventClick?.(event.id)}
-                      />
-                      <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="bg-white hover:bg-gray-100 shadow-md"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEditEvent?.(event.id);
-                          }}
-                        >
-                          <FileEdit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="bg-white hover:bg-red-50 text-red-600 hover:text-red-700 shadow-md"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteEventId(event.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+              {(() => {
+                // 管理员显示所有已发布活动，普通用户显示自己的
+                const displayEvents = user?.isAdmin && allPublishedEvents
+                  ? allPublishedEvents
+                  : publishedEvents;
+                const isAdmin = user?.isAdmin;
+
+                return (
+                  <>
+                    <h3 className="text-lg text-gray-900 mb-4 flex items-center gap-2">
+                      <Edit className="h-5 w-5 text-green-600" />
+                      {isAdmin ? "全部已发布活动" : "已发布"} ({displayEvents.length})
+                      {isAdmin && (
+                        <Badge variant="outline" className="ml-2 text-purple-600 border-purple-300">
+                          管理员
+                        </Badge>
+                      )}
+                    </h3>
+                    {displayEvents.length > 0 ? (
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {displayEvents.map((event) => (
+                          <div key={event.id} className="relative group">
+                            <EventCard
+                              {...event}
+                              onClick={() => onEventClick?.(event.id)}
+                            />
+                            {/* 管理员视角显示发布者信息 */}
+                            {isAdmin && event.createdBy && (
+                              <div className="absolute bottom-16 left-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                发布者: {event.createdBy}
+                              </div>
+                            )}
+                            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {/* 只有自己的活动或管理员才显示编辑按钮 */}
+                              {(event.createdBy === user?.email || !isAdmin) && (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  className="bg-white hover:bg-gray-100 shadow-md"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEditEvent?.(event.id);
+                                  }}
+                                >
+                                  <FileEdit className="h-4 w-4" />
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                className="bg-white hover:bg-red-50 text-red-600 hover:text-red-700 shadow-md"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteEventId(event.id);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <Card className="p-8">
-                  <div className="text-center text-gray-500">
-                    <p>暂无已发布的活动</p>
-                  </div>
-                </Card>
-              )}
+                    ) : (
+                      <Card className="p-8">
+                        <div className="text-center text-gray-500">
+                          <p>{isAdmin ? "暂无已发布的活动" : "暂无已发布的活动"}</p>
+                        </div>
+                      </Card>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             <Separator />

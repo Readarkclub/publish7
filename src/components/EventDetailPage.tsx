@@ -8,11 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "./ui/dialog";
 import { Textarea } from "./ui/textarea";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { 
-  Calendar, 
-  MapPin, 
-  Users, 
-  Share2, 
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Share2,
   Heart,
   Clock,
   Ticket,
@@ -21,7 +21,8 @@ import {
   MessageCircle,
   Link as LinkIcon,
   Check,
-  ArrowLeft
+  ArrowLeft,
+  Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Event, Review } from "../types/event";
@@ -33,6 +34,7 @@ interface EventDetailPageProps {
     name: string;
     email: string;
     avatar?: string;
+    isAdmin?: boolean;
   } | null;
   events?: Event[];
   event?: Event; // 新添加：直接传入整个活动对象
@@ -44,6 +46,7 @@ interface EventDetailPageProps {
   isFollowingOrganizer?: boolean;
   onFollowOrganizer?: (organizerName: string) => boolean;
   onAddReview?: (eventId: string, review: { rating: number; comment: string }) => void;
+  onDeleteReview?: (eventId: string, reviewUserEmail: string) => void;
 }
 
 export function EventDetailPage({
@@ -59,13 +62,16 @@ export function EventDetailPage({
   onCategoryClick,
   isFollowingOrganizer,
   onFollowOrganizer,
-  onAddReview
+  onAddReview,
+  onDeleteReview
 }: EventDetailPageProps) {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [hoverRating, setHoverRating] = useState(0);
+  const [showDeleteReviewDialog, setShowDeleteReviewDialog] = useState(false);
+  const [reviewToDelete, setReviewToDelete] = useState<Review | null>(null);
 
   // 使用外部传入的状态
   const isRegistered = externalIsRegistered || false;
@@ -443,35 +449,57 @@ export function EventDetailPage({
                   ) : (
                     <>
                       <div className="space-y-4">
-                        {reviews.map((review, index) => (
-                          <div key={index} className="border-b pb-4 last:border-0">
-                            <div className="flex items-start gap-3 mb-2">
-                              <Avatar>
-                                <AvatarImage src={review.avatar} alt={review.user} />
-                                <AvatarFallback>{review.user.charAt(0)}</AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1">
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="text-gray-900">{review.user}</span>
-                                  <div className="flex">
-                                    {[...Array(5)].map((_, i) => (
-                                      <Star
-                                        key={i}
-                                        className={`h-4 w-4 ${
-                                          i < review.rating
-                                            ? 'text-yellow-500 fill-yellow-500'
-                                            : 'text-gray-300'
-                                        }`}
-                                      />
-                                    ))}
+                        {reviews.map((review, index) => {
+                          const isOwnReview = user?.email === review.userEmail;
+                          const isEventCreator = user?.email === event.createdBy;
+                          const canDelete = user && (
+                            isOwnReview || user.isAdmin === true || isEventCreator
+                          );
+
+                          return (
+                            <div key={index} className="border-b pb-4 last:border-0">
+                              <div className="flex items-start gap-3 mb-2">
+                                <Avatar>
+                                  <AvatarImage src={review.avatar} alt={review.user} />
+                                  <AvatarFallback>{review.user.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="text-gray-900">{review.user}</span>
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex">
+                                        {[...Array(5)].map((_, i) => (
+                                          <Star
+                                            key={i}
+                                            className={`h-4 w-4 ${
+                                              i < review.rating
+                                                ? 'text-yellow-500 fill-yellow-500'
+                                                : 'text-gray-300'
+                                            }`}
+                                          />
+                                        ))}
+                                      </div>
+                                      {canDelete && (
+                                        <button
+                                          onClick={() => {
+                                            setReviewToDelete(review);
+                                            setShowDeleteReviewDialog(true);
+                                          }}
+                                          className="p-2 -m-2 text-gray-400 hover:text-red-500 transition-colors touch-manipulation"
+                                          title={isOwnReview ? "删除我的评价" : isEventCreator ? "删除此评价（活动发布者）" : "删除此评价（管理员）"}
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
+                                  <p className="text-sm text-gray-500 mb-2">{review.date}</p>
+                                  <p className="text-gray-700">{review.comment}</p>
                                 </div>
-                                <p className="text-sm text-gray-500 mb-2">{review.date}</p>
-                                <p className="text-gray-700">{review.comment}</p>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
 
                       <div className="pt-4">
@@ -580,6 +608,45 @@ export function EventDetailPage({
         hoverRating={hoverRating}
         onHoverRatingChange={setHoverRating}
       />
+
+      {/* Delete Review Confirmation Dialog */}
+      <Dialog open={showDeleteReviewDialog} onOpenChange={setShowDeleteReviewDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>删除评价</DialogTitle>
+            <DialogDescription>
+              {reviewToDelete && (
+                user?.email === reviewToDelete.userEmail
+                  ? "确定要删除这条评价吗？此操作无法撤销。"
+                  : `确定要删除 ${reviewToDelete.user} 的评价吗？此操作无法撤销。`
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteReviewDialog(false);
+                setReviewToDelete(null);
+              }}
+            >
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (reviewToDelete?.userEmail && onDeleteReview) {
+                  onDeleteReview(event.id, reviewToDelete.userEmail);
+                }
+                setShowDeleteReviewDialog(false);
+                setReviewToDelete(null);
+              }}
+            >
+              删除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
